@@ -3,6 +3,7 @@ package app.energymonitor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import app.energymonitor.domain.AuthValidator
 import app.energymonitor.domain.ConsumptionPoint
 import app.energymonitor.domain.EnergyCalculator
 import app.energymonitor.domain.LoadLevel
@@ -48,5 +49,22 @@ class EnergyCalculatorTest {
         assertEquals(6.0, EnergyCalculator.dailyEnergyKwh(profile), 0.001)
         assertEquals(2.0, EnergyCalculator.averagePowerKw(profile), 0.001)
         assertEquals(3.0, EnergyCalculator.peakPoint(profile)?.powerKw ?: 0.0, 0.001)
+    }
+
+    @Test
+    fun `валідація форми входу відхиляє короткий пароль`() {
+        val result = AuthValidator.validateLogin("operator", "123")
+        assertTrue(!result.isSuccess)
+    }
+
+    @Test
+    fun `валідація реєстрації виявляє розбіжність паролів`() {
+        val result = AuthValidator.validateRegistration(
+            name = "Оператор",
+            email = "op@kpi.ua",
+            password = "energy2026",
+            confirmPassword = "energy2025"
+        )
+        assertTrue(!result.isSuccess)
     }
 }

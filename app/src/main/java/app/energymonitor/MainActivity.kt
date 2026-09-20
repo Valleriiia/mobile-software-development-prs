@@ -14,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import app.energymonitor.ui.ScreenSelector
+import app.energymonitor.ui.auth.AuthScreen
 import app.energymonitor.ui.calculator.CalculatorScreen
 import app.energymonitor.ui.dashboard.DashboardScreen
 import app.energymonitor.ui.monitor.MonitorScreen
@@ -32,21 +33,27 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun EnergyMonitorApp() {
+    var isAuthenticated by remember { mutableStateOf(false) }
     var currentScreen by remember { mutableStateOf(AppScreen.MONITOR) }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            ScreenSelector(
-                selected = currentScreen,
-                onSelectedChange = { currentScreen = it }
-            )
-            when (currentScreen) {
-                AppScreen.MONITOR -> MonitorScreen(modifier = Modifier.weight(1f))
-                AppScreen.CALCULATOR -> CalculatorScreen(modifier = Modifier.weight(1f))
-                AppScreen.DASHBOARD -> DashboardScreen(modifier = Modifier.weight(1f))
+        if (!isAuthenticated) {
+            AuthScreen(onAuthSuccess = { isAuthenticated = true })
+        } else {
+            Column(modifier = Modifier.fillMaxSize()) {
+                ScreenSelector(
+                    selected = currentScreen,
+                    onSelectedChange = { currentScreen = it }
+                )
+
+                when (currentScreen) {
+                    AppScreen.MONITOR -> MonitorScreen(modifier = Modifier.weight(1f))
+                    AppScreen.CALCULATOR -> CalculatorScreen(modifier = Modifier.weight(1f))
+                    AppScreen.DASHBOARD -> DashboardScreen(modifier = Modifier.weight(1f))
+                }
             }
         }
     }
