@@ -15,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import app.energymonitor.ui.ScreenSelector
 import app.energymonitor.ui.calculator.CalculatorScreen
+import app.energymonitor.ui.dashboard.DashboardScreen
 import app.energymonitor.ui.monitor.MonitorScreen
 import app.energymonitor.ui.theme.EnergyMonitorTheme
 
@@ -45,6 +46,7 @@ fun EnergyMonitorApp() {
             when (currentScreen) {
                 AppScreen.MONITOR -> MonitorScreen(modifier = Modifier.weight(1f))
                 AppScreen.CALCULATOR -> CalculatorScreen(modifier = Modifier.weight(1f))
+                AppScreen.DASHBOARD -> DashboardScreen(modifier = Modifier.weight(1f))
             }
         }
     }

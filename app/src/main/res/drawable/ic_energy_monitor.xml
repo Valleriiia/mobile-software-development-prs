@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Векторне зображення для екранів завдань 3 і 4:
+    корпус лічильника, стовпчики графіка споживання та символ електроенергії.
+    Використовується через Image(painterResource(R.drawable.ic_energy_monitor)).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+
+    <!-- Корпус приладу -->
+    <path
+        android:fillColor="#0D47A1"
+        android:pathData="M14,8 L106,8 L106,112 L14,112 Z" />
+
+    <!-- Внутрішнє поле (екран приладу) -->
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M24,20 L96,20 L96,100 L24,100 Z" />
+
+    <!-- Стовпчики графіка споживання -->
+    <path
+        android:fillColor="#42A5F5"
+        android:pathData="M32,76 L44,76 L44,92 L32,92 Z" />
+    <path
+        android:fillColor="#42A5F5"
+        android:pathData="M54,64 L66,64 L66,92 L54,92 Z" />
+    <path
+        android:fillColor="#1565C0"
+        android:pathData="M76,70 L88,70 L88,92 L76,92 Z" />
+
+    <!-- Символ електроенергії -->
+    <path
+        android:fillColor="#F9A825"
+        android:pathData="M66,26 L44,56 L57,56 L52,74 L76,44 L62,44 Z" />
+</vector>
