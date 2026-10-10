@@ -32,10 +32,18 @@ import app.energymonitor.domain.fmt
 import app.energymonitor.ui.theme.LoadNormal
 import app.energymonitor.ui.theme.LoadOverload
 import app.energymonitor.ui.theme.LoadWarning
+import app.energymonitor.ui.nav.ScreenHeader
 import kotlin.random.Random
 
+/**
+ * Екран поточних показників лічильника: потужність, енергія за добу
+ * та вартість. Значення змінюються з анімацією при натисканні кнопки
+ * оновлення.
+ *
+ * @param onBack повернення в головне меню
+ */
 @Composable
-fun MonitorScreen(modifier: Modifier = Modifier) {
+fun MonitorScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
 
     var powerKw by remember { mutableStateOf(3.40) }
     var energyKwh by remember { mutableStateOf(42.80) }
@@ -84,11 +92,8 @@ fun MonitorScreen(modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        Text(
-            text = "Система моніторингу енергоспоживання",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
+        ScreenHeader(title = "Моніторинг", onBack = onBack, modifier = Modifier.align(Alignment.Start))
+        Spacer(modifier = Modifier.height(12.dp))
         Text(
             text = "Об'єкт: навчальний корпус №18",
             style = MaterialTheme.typography.bodyMedium,

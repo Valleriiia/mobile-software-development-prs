@@ -33,9 +33,17 @@ import app.energymonitor.domain.fmt
 import app.energymonitor.ui.theme.LoadNormal
 import app.energymonitor.ui.theme.LoadOverload
 import app.energymonitor.ui.theme.LoadWarning
+import app.energymonitor.ui.nav.ScreenHeader
 
+/**
+ * Панель моніторингу: режим роботи об'єкта (нічний, денний, піковий),
+ * картки показників, стан системи та перелік споживачів. Розташування
+ * карток адаптується до ширини екрана.
+ *
+ * @param onBack повернення в головне меню
+ */
 @Composable
-fun DashboardScreen(modifier: Modifier = Modifier) {
+fun DashboardScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
 
     var mode by remember { mutableStateOf(OperationMode.DAY) }
     // refreshKey не зберігає жодних даних — це лише "тригер": збільшення
@@ -65,6 +73,8 @@ fun DashboardScreen(modifier: Modifier = Modifier) {
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
+        ScreenHeader(title = "Панель", onBack = onBack)
+        Spacer(modifier = Modifier.height(12.dp))
         DashboardHeader(
             title = "Панель моніторингу",
             subtitle = "Режим: ${mode.title}. ${mode.comment}"

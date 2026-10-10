@@ -33,6 +33,7 @@ import app.energymonitor.domain.MeterReading
 import app.energymonitor.domain.OperationMode
 import app.energymonitor.domain.asHourLabel
 import app.energymonitor.domain.fmt
+import app.energymonitor.ui.nav.ScreenHeader
 
 /** Результат розрахунку, який показується користувачу. */
 private data class CalculationResult(
@@ -43,8 +44,15 @@ private data class CalculationResult(
     val costUah: Double
 )
 
+/**
+ * Екран розрахунку: з введених U, I, cos φ і часу роботи обчислює потужності,
+ * енергію та вартість (логіка в EnergyCalculator) і будує графік добового
+ * профілю бібліотекою MPAndroidChart.
+ *
+ * @param onBack повернення в головне меню
+ */
 @Composable
-fun CalculatorScreen(modifier: Modifier = Modifier) {
+fun CalculatorScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
 
     var voltage by remember { mutableStateOf("230") }
     var current by remember { mutableStateOf("12.5") }
@@ -63,11 +71,8 @@ fun CalculatorScreen(modifier: Modifier = Modifier) {
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
-        Text(
-            text = "Розрахунок споживання",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
+        ScreenHeader(title = "Розрахунок", onBack = onBack)
+        Spacer(modifier = Modifier.height(12.dp))
         Text(
             text = "Параметри вводяться вручну, обчислення виконує EnergyCalculator",
             style = MaterialTheme.typography.bodyMedium,
