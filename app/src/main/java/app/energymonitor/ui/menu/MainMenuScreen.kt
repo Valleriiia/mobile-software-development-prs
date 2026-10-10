@@ -60,6 +60,7 @@ fun MainMenuScreen(
                 MenuButton("Моніторинг", onClick = { onNavigate(Routes.MONITOR) })
                 MenuButton("Розрахунок", onClick = { onNavigate(Routes.CALCULATOR) })
                 MenuButton("Панель", onClick = { onNavigate(Routes.DASHBOARD) })
+                MenuButton("Додати показник", onClick = { onNavigate(Routes.ADD_READING) })
                 MenuButton("Профіль", onClick = { onNavigate(Routes.profile("menu")) })
             }
         }

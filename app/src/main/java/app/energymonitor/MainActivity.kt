@@ -17,6 +17,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import app.energymonitor.domain.ReadingRecord
 import app.energymonitor.ui.auth.AuthScreen
 import app.energymonitor.ui.calculator.CalculatorScreen
 import app.energymonitor.ui.dashboard.DashboardScreen
@@ -24,6 +25,7 @@ import app.energymonitor.ui.menu.MainMenuScreen
 import app.energymonitor.ui.monitor.MonitorScreen
 import app.energymonitor.ui.nav.Routes
 import app.energymonitor.ui.profile.ProfileScreen
+import app.energymonitor.ui.reading.AddReadingScreen
 import app.energymonitor.ui.theme.EnergyMonitorTheme
 
 /**
@@ -69,6 +71,7 @@ fun EnergyMonitorApp() {
 @Composable
 private fun EnergyMonitorNavGraph() {
     var notifyOnOverload by remember { mutableStateOf(true) }
+    var readings by remember { mutableStateOf<List<ReadingRecord>>(emptyList()) }
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = Routes.MENU) {
@@ -80,6 +83,13 @@ private fun EnergyMonitorNavGraph() {
         composable(Routes.MONITOR) { MonitorScreen(onBack = { navController.popBackStack() }) }
         composable(Routes.CALCULATOR) { CalculatorScreen(onBack = { navController.popBackStack() }) }
         composable(Routes.DASHBOARD) { DashboardScreen(onBack = { navController.popBackStack() }) }
+        composable(Routes.ADD_READING) {
+            AddReadingScreen(
+                existingLabels = readings.map { it.label },
+                onSubmit = { readings = readings + it },
+                onBack = { navController.popBackStack() }
+            )
+        }
         // Маршрут з аргументом: {fromScreen} підставляється під час navigate()
         // і зчитується з backStackEntry.arguments
         composable(

@@ -1,16 +1,5 @@
 package app.energymonitor.domain
 
-/**
- * Результат перевірки форми.
- *
- * @param isSuccess true, якщо перевірка пройдена
- * @param message текст повідомлення для користувача
- */
-data class ValidationResult(
-    val isSuccess: Boolean,
-    val message: String
-)
-
 object AuthValidator {
 
     private const val MIN_LOGIN_LENGTH = 3

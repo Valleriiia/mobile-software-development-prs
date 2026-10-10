@@ -13,6 +13,9 @@ object Routes {
     // Панель з режимами роботи та переліком споживачів
     const val DASHBOARD = "dashboard"
 
+    // Форма додавання показників
+    const val ADD_READING = "add_reading"
+
     // Шаблон маршруту з аргументом, {fromScreen} замінюється значенням у profile()
     const val PROFILE_PATTERN = "profile/{fromScreen}"
 
