@@ -16,6 +16,9 @@ object Routes {
     // Форма додавання показників
     const val ADD_READING = "add_reading"
 
+    // Історія збережених показників
+    const val READINGS_LIST = "readings_list"
+
     // Шаблон маршруту з аргументом, {fromScreen} замінюється значенням у profile()
     const val PROFILE_PATTERN = "profile/{fromScreen}"
 

@@ -6,18 +6,14 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import app.energymonitor.domain.ReadingRecord
 import app.energymonitor.ui.auth.AuthScreen
 import app.energymonitor.ui.calculator.CalculatorScreen
 import app.energymonitor.ui.dashboard.DashboardScreen
@@ -26,7 +22,9 @@ import app.energymonitor.ui.monitor.MonitorScreen
 import app.energymonitor.ui.nav.Routes
 import app.energymonitor.ui.profile.ProfileScreen
 import app.energymonitor.ui.reading.AddReadingScreen
+import app.energymonitor.ui.reading.ReadingsListScreen
 import app.energymonitor.ui.theme.EnergyMonitorTheme
+import app.energymonitor.viewmodel.ReadingsViewModel
 
 /**
  * Єдина Activity застосунку. Лише підключає тему Material і кореневий
@@ -71,7 +69,7 @@ fun EnergyMonitorApp() {
 @Composable
 private fun EnergyMonitorNavGraph() {
     var notifyOnOverload by remember { mutableStateOf(true) }
-    var readings by remember { mutableStateOf<List<ReadingRecord>>(emptyList()) }
+    val readingsViewModel: ReadingsViewModel = viewModel()
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = Routes.MENU) {
@@ -83,13 +81,8 @@ private fun EnergyMonitorNavGraph() {
         composable(Routes.MONITOR) { MonitorScreen(onBack = { navController.popBackStack() }) }
         composable(Routes.CALCULATOR) { CalculatorScreen(onBack = { navController.popBackStack() }) }
         composable(Routes.DASHBOARD) { DashboardScreen(onBack = { navController.popBackStack() }) }
-        composable(Routes.ADD_READING) {
-            AddReadingScreen(
-                existingLabels = readings.map { it.label },
-                onSubmit = { readings = readings + it },
-                onBack = { navController.popBackStack() }
-            )
-        }
+        composable(Routes.ADD_READING) { AddReadingScreen(viewModel = readingsViewModel, onBack = { navController.popBackStack() }) }
+        composable(Routes.READINGS_LIST) { ReadingsListScreen(viewModel = readingsViewModel, onBack = { navController.popBackStack() }) }
         // Маршрут з аргументом: {fromScreen} підставляється під час navigate()
         // і зчитується з backStackEntry.arguments
         composable(

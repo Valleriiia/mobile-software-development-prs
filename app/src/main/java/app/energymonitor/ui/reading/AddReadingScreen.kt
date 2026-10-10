@@ -8,24 +8,29 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import app.energymonitor.domain.ReadingRecord
-import app.energymonitor.domain.ReadingValidator
 import app.energymonitor.ui.nav.ScreenHeader
+import app.energymonitor.viewmodel.ReadingsViewModel
+import app.energymonitor.viewmodel.UiState
 
+/**
+ * Composable-екран для додавання нового показника.
+ * Взаємодіє з ViewModel для збереження даних та відображення статусу операції.
+ *
+ * @param viewModel ViewModel для управління даними показників
+ * @param onBack Функція для повернення на попередній екран
+ */
 @Composable
 fun AddReadingScreen(
-    existingLabels: List<String>,
-    onSubmit: (ReadingRecord) -> Unit,
+    viewModel: ReadingsViewModel,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -33,11 +38,14 @@ fun AddReadingScreen(
     var voltage by remember { mutableStateOf("230") }
     var current by remember { mutableStateOf("10") }
     var powerFactor by remember { mutableStateOf("0.95") }
-    var isLoading by remember { mutableStateOf(false) }
-    var message by remember { mutableStateOf("") }
-    var isError by remember { mutableStateOf(false) }
 
-    val scope = rememberCoroutineScope()
+    // Реактивна підписка на StateFlow. UI автоматично оновлюється при зміні стану у ViewModel
+    val uiState by viewModel.uiState.collectAsState()
+
+    // Обробка побічних ефектів (side-effects) на основі стану з ViewModel
+    LaunchedEffect(uiState) {
+        if (uiState is UiState.Success) label = ""
+    }
 
     Column(
         modifier = modifier
@@ -47,51 +55,59 @@ fun AddReadingScreen(
     ) {
         ScreenHeader(title = "Додати показник", onBack = onBack)
         Spacer(modifier = Modifier.height(12.dp))
-        FormHeader(title = "Додати показник", subtitle = "Значення перевіряються перед збереженням")
+        FormHeader(
+            title = "Додати показник",
+            subtitle = "Дані перевіряються і зберігаються у локальній базі Room"
+        )
         Spacer(modifier = Modifier.height(16.dp))
 
-        LabeledField(value = label, onValueChange = { label = it }, label = "Назва точки обліку", hint = "наприклад: Щит №1")
+        LabeledField(
+            value = label,
+            onValueChange = { label = it },
+            label = "Назва точки обліку",
+            hint = "наприклад: Щит №1"
+        )
         Spacer(modifier = Modifier.height(8.dp))
-        LabeledField(value = voltage, onValueChange = { voltage = it }, label = "Напруга, В", hint = "діапазон 100–400", keyboardType = KeyboardType.Decimal)
+        LabeledField(
+            value = voltage,
+            onValueChange = { voltage = it },
+            label = "Напруга, В",
+            hint = "діапазон 100–400",
+            keyboardType = KeyboardType.Decimal
+        )
         Spacer(modifier = Modifier.height(8.dp))
-        LabeledField(value = current, onValueChange = { current = it }, label = "Струм, А", hint = "діапазон 0–200", keyboardType = KeyboardType.Decimal)
+        LabeledField(
+            value = current,
+            onValueChange = { current = it },
+            label = "Струм, А",
+            hint = "діапазон 0–200",
+            keyboardType = KeyboardType.Decimal
+        )
         Spacer(modifier = Modifier.height(8.dp))
-        LabeledField(value = powerFactor, onValueChange = { powerFactor = it }, label = "cos(fi)", hint = "значення від 0 до 1", keyboardType = KeyboardType.Decimal)
+        LabeledField(
+            value = powerFactor,
+            onValueChange = { powerFactor = it },
+            label = "cos(fi)",
+            hint = "значення від 0 до 1",
+            keyboardType = KeyboardType.Decimal
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (isLoading) FormLoadingIndicator() else FormMessage(message, isError)
+        when (val state = uiState) {
+            is UiState.Loading -> FormLoadingIndicator()
+            is UiState.Error -> FormMessage(state.message, isError = true)
+            is UiState.Success -> FormMessage(state.message, isError = false)
+            UiState.Idle -> {}
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
         SubmitButton(
             text = "Зберегти показник",
-            enabled = !isLoading,
-            onClick = {
-                val validation = ReadingValidator.validate(label, existingLabels, voltage, current, powerFactor)
-                if (!validation.isSuccess) {
-                    isError = true
-                    message = validation.message
-                } else {
-                    scope.launch {
-                        isLoading = true
-                        delay(700)
-                        onSubmit(
-                            ReadingRecord(
-                                label = label.trim(),
-                                timestampMillis = System.currentTimeMillis(),
-                                voltage = voltage.replace(',', '.').toDouble(),
-                                current = current.replace(',', '.').toDouble(),
-                                powerFactor = powerFactor.replace(',', '.').toDouble()
-                            )
-                        )
-                        isError = false
-                        message = validation.message
-                        label = ""
-                        isLoading = false
-                    }
-                }
-            }
+            enabled = uiState !is UiState.Loading,
+            // Передача дії користувача (intent) у ViewModel для виконання бізнес-логіки
+            onClick = { viewModel.addReading(label, voltage, current, powerFactor) }
         )
     }
 }
