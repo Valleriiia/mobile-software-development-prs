@@ -8,12 +8,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.room.Room
+import app.energymonitor.data.AppDatabase
+import app.energymonitor.data.ReadingsRepository
 import app.energymonitor.ui.auth.AuthScreen
 import app.energymonitor.ui.calculator.CalculatorScreen
 import app.energymonitor.ui.dashboard.DashboardScreen
@@ -25,6 +29,7 @@ import app.energymonitor.ui.reading.AddReadingScreen
 import app.energymonitor.ui.reading.ReadingsListScreen
 import app.energymonitor.ui.theme.EnergyMonitorTheme
 import app.energymonitor.viewmodel.ReadingsViewModel
+import app.energymonitor.viewmodel.ReadingsViewModelFactory
 
 /**
  * Єдина Activity застосунку. Лише підключає тему Material і кореневий
@@ -68,8 +73,13 @@ fun EnergyMonitorApp() {
  */
 @Composable
 private fun EnergyMonitorNavGraph() {
+    val context = LocalContext.current
+    val database = remember {
+        Room.databaseBuilder(context, AppDatabase::class.java, "energy_monitor.db").build()
+    }
+    val repository = remember(database) { ReadingsRepository(database.readingDao()) }
     var notifyOnOverload by remember { mutableStateOf(true) }
-    val readingsViewModel: ReadingsViewModel = viewModel()
+    val readingsViewModel: ReadingsViewModel = viewModel(factory = ReadingsViewModelFactory(repository))
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = Routes.MENU) {
