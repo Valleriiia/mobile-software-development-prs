@@ -18,6 +18,8 @@ import androidx.navigation.navArgument
 import androidx.room.Room
 import app.energymonitor.data.AppDatabase
 import app.energymonitor.data.ReadingsRepository
+import app.energymonitor.data.source.RoomReadingsLocalSource
+import app.energymonitor.data.source.SimulatedRemoteReadingsSource
 import app.energymonitor.ui.auth.AuthScreen
 import app.energymonitor.ui.calculator.CalculatorScreen
 import app.energymonitor.ui.dashboard.DashboardScreen
@@ -77,7 +79,13 @@ private fun EnergyMonitorNavGraph() {
     val database = remember {
         Room.databaseBuilder(context, AppDatabase::class.java, "energy_monitor.db").build()
     }
-    val repository = remember(database) { ReadingsRepository(database.readingDao()) }
+    // Ініціалізація Repository локальним (Room) та віддаленим джерелами даних.
+    val repository = remember(database) {
+        ReadingsRepository(
+            local = RoomReadingsLocalSource(database.readingDao(), database),
+            remote = SimulatedRemoteReadingsSource()
+        )
+    }
     var notifyOnOverload by remember { mutableStateOf(true) }
     val readingsViewModel: ReadingsViewModel = viewModel(factory = ReadingsViewModelFactory(repository))
     val navController = rememberNavController()

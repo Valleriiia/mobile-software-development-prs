@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import app.energymonitor.ui.nav.ScreenHeader
 
 /**
- * Екран профілю оператора. Демонструє два механізми заняття 5:
+ * Екран профілю оператора. Демонструє два механізми:
  *  1) передачу даних між екранами: fromScreen приходить як аргумент
  *     маршруту "profile/{fromScreen}" через NavController;
  *  2) збережене налаштування: перемикач notifyOnOverload, стан якого
