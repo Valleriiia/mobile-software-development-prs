@@ -19,6 +19,9 @@ object Routes {
     // Історія збережених показників
     const val READINGS_LIST = "readings_list"
 
+    // Точки обліку з REST API: картки навантаження й вартості
+    const val METERS = "meters"
+
     // Шаблон маршруту з аргументом, {fromScreen} замінюється значенням у profile()
     const val PROFILE_PATTERN = "profile/{fromScreen}"
 

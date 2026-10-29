@@ -62,6 +62,7 @@ fun MainMenuScreen(
                 MenuButton("Панель", onClick = { onNavigate(Routes.DASHBOARD) })
                 MenuButton("Додати показник", onClick = { onNavigate(Routes.ADD_READING) })
                 MenuButton("Історія показників", onClick = { onNavigate(Routes.READINGS_LIST) })
+                MenuButton("Точки обліку (REST API)", onClick = { onNavigate(Routes.METERS) })
                 MenuButton("Профіль", onClick = { onNavigate(Routes.profile("menu")) })
             }
         }

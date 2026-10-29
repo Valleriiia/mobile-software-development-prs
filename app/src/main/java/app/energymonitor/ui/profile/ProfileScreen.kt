@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import app.energymonitor.data.remote.MockBackend
 import app.energymonitor.ui.nav.ScreenHeader
 
 /**
@@ -27,6 +28,7 @@ import app.energymonitor.ui.nav.ScreenHeader
  * @param fromScreen назва екрана, з якого відкрито профіль
  * @param notifyOnOverload чи ввімкнено сповіщення про перевантаження
  * @param onToggleNotify callback зміни налаштування
+ * @param backend мок-сервер, режим збоїв якого перемикається в панелі розробника
  * @param onBack повернення на попередній екран
  */
 @Composable
@@ -34,6 +36,7 @@ fun ProfileScreen(
     fromScreen: String,
     notifyOnOverload: Boolean,
     onToggleNotify: (Boolean) -> Unit,
+    backend: MockBackend,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -59,5 +62,9 @@ fun ProfileScreen(
             Text("Сповіщати про перевантаження", style = MaterialTheme.typography.bodyLarge)
             Switch(checked = notifyOnOverload, onCheckedChange = onToggleNotify)
         }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        DevToolsCard(backend = backend)
     }
 }
