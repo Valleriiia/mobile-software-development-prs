@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,11 +26,13 @@ import app.energymonitor.ui.nav.Routes
  * відбудеться, вирішує граф у MainActivity.
  *
  * @param onNavigate callback, якому передається маршрут з Routes
+ * @param canAddReadings чи показувати пункт додавання показників (залежить від ролі)
  */
 @Composable
 fun MainMenuScreen(
     onNavigate: (route: String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    canAddReadings: Boolean = true
 ) {
     // remember без ключів: показання генерується один раз за відкриття екрана,
     // а не при кожній рекомпозиції
@@ -42,6 +46,7 @@ fun MainMenuScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -60,7 +65,9 @@ fun MainMenuScreen(
                 MenuButton("Моніторинг", onClick = { onNavigate(Routes.MONITOR) })
                 MenuButton("Розрахунок", onClick = { onNavigate(Routes.CALCULATOR) })
                 MenuButton("Панель", onClick = { onNavigate(Routes.DASHBOARD) })
-                MenuButton("Додати показник", onClick = { onNavigate(Routes.ADD_READING) })
+                if (canAddReadings) {
+                    MenuButton("Додати показник", onClick = { onNavigate(Routes.ADD_READING) })
+                }
                 MenuButton("Історія показників", onClick = { onNavigate(Routes.READINGS_LIST) })
                 MenuButton("Точки обліку (REST API)", onClick = { onNavigate(Routes.METERS) })
                 MenuButton("Профіль", onClick = { onNavigate(Routes.profile("menu")) })

@@ -16,33 +16,35 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import app.energymonitor.domain.AuthValidator
-import app.energymonitor.domain.ValidationResult
+import app.energymonitor.viewmodel.AuthUiState
+import app.energymonitor.viewmodel.AuthViewModel
 
-// Успішний вхід або реєстрація викликають onAuthSuccess() — MainActivity
-// реагує на це показом основних екранів застосунку.
+/**
+ * Екран входу й реєстрації. Сам екран нічого не перевіряє і не знає про мережу:
+ * він передає введене в AuthViewModel та відображає її стан. Успішний вхід
+ * починає сесію (SessionManager), і MainActivity сама замінює цей екран на
+ * основний застосунок.
+ *
+ * @param notice пояснення, чому користувача повернуто на вхід (наприклад, сесія закінчилась)
+ */
 @Composable
 fun AuthScreen(
-    onAuthSuccess: () -> Unit,
+    viewModel: AuthViewModel,
+    notice: String?,
     modifier: Modifier = Modifier
 ) {
     var isRegisterMode by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
-    var result by remember { mutableStateOf<ValidationResult?>(null) }
-
-    // rememberCoroutineScope прив'язує корутину до життєвого циклу composable,
-    // щоб можна було показати стан завантаження на час "обробки запиту".
-    val scope = rememberCoroutineScope()
+    val uiState by viewModel.uiState.collectAsState()
+    val isLoading = uiState is AuthUiState.Loading
 
     BoxWithConstraints(
         modifier = modifier.fillMaxSize()
@@ -76,46 +78,20 @@ fun AuthScreen(
                     RegistrationForm(
                         isLoading = isLoading,
                         onRegister = { name, email, password, confirm ->
-                            scope.launch {
-                                isLoading = true
-                                result = null
-                                delay(1200) // імітація запиту до сервера
-                                val validation = AuthValidator.validateRegistration(
-                                    name, email, password, confirm
-                                )
-                                result = validation
-                                isLoading = false
-                                if (validation.isSuccess) {
-                                    delay(600) // даємо користувачу побачити повідомлення
-                                    onAuthSuccess()
-                                }
-                            }
+                            viewModel.register(name, email, password, confirm)
                         },
                         onSwitchToLogin = {
                             isRegisterMode = false
-                            result = null
+                            viewModel.clearMessage()
                         }
                     )
                 } else {
                     LoginForm(
                         isLoading = isLoading,
-                        onLogin = { login, password ->
-                            scope.launch {
-                                isLoading = true
-                                result = null
-                                delay(1200) // імітація перевірки на сервері
-                                val validation = AuthValidator.validateLogin(login, password)
-                                result = validation
-                                isLoading = false
-                                if (validation.isSuccess) {
-                                    delay(600) // даємо користувачу побачити повідомлення
-                                    onAuthSuccess()
-                                }
-                            }
-                        },
+                        onLogin = { login, password -> viewModel.login(login, password) },
                         onSwitchToRegister = {
                             isRegisterMode = true
-                            result = null
+                            viewModel.clearMessage()
                         }
                     )
                 }
@@ -138,10 +114,23 @@ fun AuthScreen(
                         }
                     }
                 } else {
-                    result?.let { r ->
-                        AuthMessage(message = r.message, isSuccess = r.isSuccess)
+                    val failure = (uiState as? AuthUiState.Failed)?.message
+                    if (failure != null) {
+                        AuthMessage(message = failure, isSuccess = false)
+                    } else if (notice != null) {
+                        AuthMessage(message = notice, isSuccess = false)
                     }
                 }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Підказка з обліковими записами за замовчуванням для демонстрації прав доступу.
+                Text(
+                    text = "Демо-доступ: admin / admin123 (адміністратор), operator / oper123 (оператор)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }

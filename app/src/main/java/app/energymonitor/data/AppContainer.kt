@@ -2,7 +2,13 @@ package app.energymonitor.data
 
 import android.content.Context
 import androidx.room.Room
+import app.energymonitor.data.auth.AuthApiService
+import app.energymonitor.data.auth.AuthInterceptor
+import app.energymonitor.data.auth.AuthRepository
+import app.energymonitor.data.auth.SessionManager
+import app.energymonitor.data.auth.SharedPreferencesTokenStorage
 import app.energymonitor.data.network.ApiExecutor
+import app.energymonitor.data.remote.MockAuth
 import app.energymonitor.data.remote.MockBackend
 import app.energymonitor.data.remote.MockServerInterceptor
 import app.energymonitor.data.remote.ReadingsApiService
@@ -21,9 +27,16 @@ class AppContainer private constructor(context: Context) {
         Room.databaseBuilder(context, AppDatabase::class.java, "energy_monitor.db").build()
 
     val backend = MockBackend()
+    val mockAuth = MockAuth()
 
-    private val httpClient = RetrofitClient.buildHttpClient(MockServerInterceptor(backend))
+    val sessionManager = SessionManager(SharedPreferencesTokenStorage(context))
+
+    private val httpClient = RetrofitClient.buildHttpClient(
+        AuthInterceptor(sessionManager),
+        MockServerInterceptor(backend, mockAuth)
+    )
     private val api: ReadingsApiService = RetrofitClient.createService(httpClient, ReadingsApiService::class.java)
+    private val authApi: AuthApiService = RetrofitClient.createService(httpClient, AuthApiService::class.java)
     private val apiExecutor = ApiExecutor()
 
     val readingsRepository = ReadingsRepository(
@@ -32,6 +45,8 @@ class AppContainer private constructor(context: Context) {
     )
 
     val metersRepository = MetersRepository(api, apiExecutor)
+
+    val authRepository = AuthRepository(authApi, apiExecutor, sessionManager)
 
     companion object {
         @Volatile

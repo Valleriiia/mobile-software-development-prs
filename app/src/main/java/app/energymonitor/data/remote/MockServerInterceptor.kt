@@ -1,7 +1,11 @@
 package app.energymonitor.data.remote
 
+import app.energymonitor.data.auth.LoginRequest
+import app.energymonitor.data.auth.RegisterRequest
+import app.energymonitor.data.auth.TokenResponse
 import app.energymonitor.data.remote.dto.ApiErrorDto
 import app.energymonitor.data.remote.dto.ReadingDto
+import app.energymonitor.domain.UserRole
 import com.google.gson.Gson
 import com.google.gson.JsonParseException
 import okhttp3.Interceptor
@@ -20,9 +24,13 @@ import java.net.UnknownHostException
  * HTTP-відповідь на основі MockBackend. Для Retrofit це виглядає як звичайна
  * мережа. У реальному проєкті цей interceptor просто не додається, а в
  * RetrofitClient вказується справжня адреса сервера.
+ *
+ * Авторизація: вхід і реєстрація публічні, решта маршрутів вимагає дійсний
+ * JWT (інакше 401), а зміна показників доступна лише ролі ADMIN (інакше 403).
  */
 class MockServerInterceptor(
     private val backend: MockBackend,
+    private val auth: MockAuth,
     private val gson: Gson = Gson()
 ) : Interceptor {
 
@@ -56,6 +64,22 @@ class MockServerInterceptor(
     private fun route(request: Request): Response {
         val path = request.url.encodedPath
         val method = request.method
+
+        if (method == "POST" && path == "/auth/login") return login(request)
+        if (method == "POST" && path == "/auth/register") return register(request)
+
+        val claims = when (val check = auth.verify(request.header("Authorization"))) {
+            is TokenCheck.Valid -> check.claims
+            TokenCheck.Missing -> return error(request, 401, "token_missing", "Потрібна авторизація")
+            TokenCheck.Invalid -> return error(request, 401, "token_invalid", "Токен недійсний")
+            TokenCheck.Expired -> return error(request, 401, "token_expired", "Термін дії токена минув")
+        }
+
+        val isWrite = method == "POST" || method == "PUT" || method == "DELETE"
+        if (isWrite && path.startsWith("/readings") && claims.role != UserRole.ADMIN) {
+            return error(request, 403, "forbidden", "Недостатньо прав: зміна показників доступна лише адміністратору")
+        }
+
         return when {
             method == "GET" && path == "/readings" -> ok(request, backend.listReadings())
             method == "POST" && path == "/readings" -> createReading(request)
@@ -64,6 +88,22 @@ class MockServerInterceptor(
             method == "GET" && path == "/tariffs" -> ok(request, backend.tariffs)
             else -> error(request, 404, "not_found", "Маршрут $method $path не знайдено")
         }
+    }
+
+    private fun login(request: Request): Response {
+        val body = readBody<LoginRequest>(request)
+            ?: return error(request, 400, "bad_request", "Некоректне тіло запиту")
+        val token = auth.login(body.login.orEmpty(), body.password.orEmpty())
+            ?: return error(request, 401, "invalid_credentials", "Невірний логін або пароль")
+        return ok(request, TokenResponse(token, "Bearer", auth.tokenTtlSeconds))
+    }
+
+    private fun register(request: Request): Response {
+        val body = readBody<RegisterRequest>(request)
+            ?: return error(request, 400, "bad_request", "Некоректне тіло запиту")
+        val token = auth.register(body.name.orEmpty(), body.email.orEmpty(), body.password.orEmpty())
+            ?: return error(request, 409, "conflict", "Користувач із такою поштою вже існує")
+        return json(request, 201, "Created", gson.toJson(TokenResponse(token, "Bearer", auth.tokenTtlSeconds)))
     }
 
     private fun createReading(request: Request): Response {

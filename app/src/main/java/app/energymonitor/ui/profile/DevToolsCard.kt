@@ -16,16 +16,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.energymonitor.data.remote.FailureMode
+import app.energymonitor.data.remote.MockAuth
 import app.energymonitor.data.remote.MockBackend
 import app.energymonitor.ui.reading.ChipRow
 
 /**
- * Панель розробника: перемикає режим збоїв мок-сервера, щоб на живому застосунку
- * можна було побачити повторні спроби, офлайн-режим і повідомлення про помилки.
+ * Панель розробника (лише для адміністратора): режим збоїв мок-сервера і
+ * тривалість життя токенів, що видаватимуться при наступному вході. З коротким
+ * TTL легко побачити, як застосунок реагує на прострочений токен.
  */
 @Composable
-fun DevToolsCard(backend: MockBackend, modifier: Modifier = Modifier) {
+fun DevToolsCard(backend: MockBackend, mockAuth: MockAuth, modifier: Modifier = Modifier) {
     var mode by remember { mutableStateOf(backend.failureMode) }
+    var ttlSeconds by remember { mutableStateOf(mockAuth.tokenTtlSeconds) }
 
     Card(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -43,6 +46,25 @@ fun DevToolsCard(backend: MockBackend, modifier: Modifier = Modifier) {
                 onSelect = {
                     mode = it
                     backend.failureMode = it
+                }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text("Термін дії наступного токена", style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = "Застосується після повторного входу",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            ChipRow(
+                options = listOf(300L, 60L, 15L),
+                selected = ttlSeconds,
+                label = { if (it >= 60) "${it / 60} хв" else "$it с" },
+                onSelect = {
+                    ttlSeconds = it
+                    mockAuth.tokenTtlSeconds = it
                 }
             )
         }
