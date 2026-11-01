@@ -22,6 +22,9 @@ object Routes {
     // Точки обліку з REST API: картки навантаження й вартості
     const val METERS = "meters"
 
+    // Журнал мережевих помилок (лише для адміністратора)
+    const val ERROR_LOG = "error_log"
+
     // Шаблон маршруту з аргументом, {fromScreen} замінюється значенням у profile()
     const val PROFILE_PATTERN = "profile/{fromScreen}"
 

@@ -19,4 +19,5 @@ enum class UserRole(val title: String) {
 object Permissions {
     fun canEditReadings(role: UserRole?): Boolean = role == UserRole.ADMIN
     fun canUseDevTools(role: UserRole?): Boolean = role == UserRole.ADMIN
+    fun canViewErrorLog(role: UserRole?): Boolean = role == UserRole.ADMIN
 }

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import app.energymonitor.data.auth.AuthRepository
+import app.energymonitor.data.error.ErrorHandler
 import app.energymonitor.domain.AuthValidator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -61,11 +62,11 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
         _uiState.value = AuthUiState.Idle
     }
 
-    private fun describe(error: Throwable): String = when {
-        error is HttpException && error.code() == 401 -> "Невірний логін або пароль"
-        error is HttpException && error.code() == 409 -> "Користувач із такою поштою вже існує"
-        else -> "Не вдалося виконати запит: ${error.message ?: error::class.java.simpleName}"
-    }
+    // На екрані входу 401 означає "невірний пароль", а не "сесія завершена",
+    // тому цей випадок обробляється тут, а решта — спільним ErrorHandler.
+    private fun describe(error: Throwable): String =
+        if (error is HttpException && error.code() == 401) "Невірний логін або пароль"
+        else ErrorHandler.userMessage(error)
 }
 
 class AuthViewModelFactory(private val repository: AuthRepository) : ViewModelProvider.Factory {

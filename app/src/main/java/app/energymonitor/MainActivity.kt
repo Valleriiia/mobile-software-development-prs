@@ -3,10 +3,17 @@ package app.energymonitor
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -23,6 +30,7 @@ import app.energymonitor.ui.auth.AuthScreen
 import app.energymonitor.ui.calculator.CalculatorScreen
 import app.energymonitor.ui.common.AccessDeniedScreen
 import app.energymonitor.ui.dashboard.DashboardScreen
+import app.energymonitor.ui.errorlog.ErrorLogScreen
 import app.energymonitor.ui.menu.MainMenuScreen
 import app.energymonitor.ui.meters.MetersScreen
 import app.energymonitor.ui.monitor.MonitorScreen
@@ -86,12 +94,34 @@ fun EnergyMonitorApp() {
         container.sessionManager.expire("Термін дії сесії минув. Увійдіть знову")
     }
 
+    // Повідомлення від ViewModel показуються по черзі: showSnackbar призупиняється,
+    // доки попереднє не зникне, тож collect природно утворює чергу.
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(Unit) {
+        container.messenger.messages.collect { message ->
+            val result = snackbarHostState.showSnackbar(
+                message = message.text,
+                actionLabel = message.actionLabel,
+                duration = SnackbarDuration.Long
+            )
+            if (result == SnackbarResult.ActionPerformed) message.onAction?.invoke()
+        }
+    }
+
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        val current = session
-        if (current == null) {
-            AuthScreen(viewModel = authViewModel, notice = notice)
-        } else {
-            EnergyMonitorNavGraph(container = container, session = current)
+        Box(modifier = Modifier.fillMaxSize()) {
+            val current = session
+            if (current == null) {
+                AuthScreen(viewModel = authViewModel, notice = notice)
+            } else {
+                EnergyMonitorNavGraph(container = container, session = current)
+            }
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+            )
         }
     }
 }
@@ -107,18 +137,26 @@ fun EnergyMonitorApp() {
 private fun EnergyMonitorNavGraph(container: AppContainer, session: Session) {
     var notifyOnOverload by remember { mutableStateOf(true) }
     val readingsViewModel: ReadingsViewModel =
-        viewModel(factory = ReadingsViewModelFactory(container.readingsRepository))
+        viewModel(factory = ReadingsViewModelFactory(container.readingsRepository, container.messenger))
     val metersViewModel: MetersViewModel =
-        viewModel(factory = MetersViewModelFactory(container.metersRepository, container.readingsRepository))
+        viewModel(
+            factory = MetersViewModelFactory(
+                container.metersRepository,
+                container.readingsRepository,
+                container.messenger
+            )
+        )
     val navController = rememberNavController()
     val canEdit = Permissions.canEditReadings(session.role)
+    val canViewErrorLog = Permissions.canViewErrorLog(session.role)
 
     NavHost(navController = navController, startDestination = Routes.MENU) {
         // Головне меню: стартовий екран, "назад" на ньому не потрібна
         composable(Routes.MENU) {
             MainMenuScreen(
                 onNavigate = { route -> navController.navigate(route) },
-                canAddReadings = canEdit
+                canAddReadings = canEdit,
+                canViewErrorLog = canViewErrorLog
             )
         }
         // Екрани-призначення: у кожного є onBack для повернення в меню
@@ -140,6 +178,13 @@ private fun EnergyMonitorNavGraph(container: AppContainer, session: Session) {
             )
         }
         composable(Routes.METERS) { MetersScreen(viewModel = metersViewModel, onBack = { navController.popBackStack() }) }
+        composable(Routes.ERROR_LOG) {
+            if (canViewErrorLog) {
+                ErrorLogScreen(logger = container.errorLogger, onBack = { navController.popBackStack() })
+            } else {
+                AccessDeniedScreen(onBack = { navController.popBackStack() })
+            }
+        }
         // Маршрут з аргументом: {fromScreen} підставляється під час navigate()
         // і зчитується з backStackEntry.arguments
         composable(

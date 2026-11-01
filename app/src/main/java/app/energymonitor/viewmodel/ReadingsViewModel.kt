@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import app.energymonitor.data.ReadingsRepository
 import app.energymonitor.data.RefreshOutcome
+import app.energymonitor.data.error.AppError
+import app.energymonitor.data.error.ErrorHandler
 import app.energymonitor.domain.LoadLevel
 import app.energymonitor.domain.ReadingAnalytics
 import app.energymonitor.domain.ReadingRecord
@@ -24,8 +26,15 @@ import kotlinx.coroutines.launch
  * MVVM-шар для екранів показників. ViewModel не знає, скільки джерел даних
  * існує: вона працює лише з ReadingsRepository і готує для UI вже відфільтрований,
  * відсортований список та агреговану статистику.
+ *
+ * Помилки мережі перетворюються на текст через ErrorHandler. Збої фонових
+ * операцій (оновлення, видалення) показуються Snackbar-ом через messenger,
+ * а помилки форми лишаються в UiState, бо належать конкретному полю введення.
  */
-class ReadingsViewModel(private val repository: ReadingsRepository) : ViewModel() {
+class ReadingsViewModel(
+    private val repository: ReadingsRepository,
+    private val messenger: AppMessenger
+) : ViewModel() {
 
     private val _filterQuery = MutableStateFlow("")
     val filterQuery: StateFlow<String> = _filterQuery.asStateFlow()
@@ -111,7 +120,10 @@ class ReadingsViewModel(private val repository: ReadingsRepository) : ViewModel(
                         RefreshOutcome.UPDATED -> "Оновлено із сервера"
                     }
                 },
-                onFailure = { "Сервер недоступний, показано кеш: ${errorText(it)}" }
+                onFailure = {
+                    report(it) { refresh(force = true) }
+                    "Сервер недоступний, показано збережений кеш"
+                }
             )
             _isRefreshing.value = false
         }
@@ -125,7 +137,10 @@ class ReadingsViewModel(private val repository: ReadingsRepository) : ViewModel(
                     _remoteSnapshot.value = it
                     _statusMessage.value = "Показано дані сервера"
                 },
-                onFailure = { _statusMessage.value = "Не вдалося отримати дані сервера: ${errorText(it)}" }
+                onFailure = {
+                    report(it) { loadRemoteSnapshot() }
+                    _statusMessage.value = "Не вдалося отримати дані сервера"
+                }
             )
             _isRefreshing.value = false
         }
@@ -158,7 +173,7 @@ class ReadingsViewModel(private val repository: ReadingsRepository) : ViewModel(
             )
             _uiState.value = repository.add(record).fold(
                 onSuccess = { UiState.Success(validation.message) },
-                onFailure = { UiState.Error("Не вдалося зберегти: ${errorText(it)}") }
+                onFailure = { UiState.Error(ErrorHandler.userMessage(it)) }
             )
         }
     }
@@ -187,16 +202,14 @@ class ReadingsViewModel(private val repository: ReadingsRepository) : ViewModel(
             )
             _uiState.value = repository.update(updated).fold(
                 onSuccess = { UiState.Success("Показник «${updated.label}» оновлено") },
-                onFailure = { UiState.Error("Не вдалося оновити: ${errorText(it)}") }
+                onFailure = { UiState.Error(ErrorHandler.userMessage(it)) }
             )
         }
     }
 
     fun deleteReading(id: Long) {
         viewModelScope.launch {
-            repository.delete(id).onFailure {
-                _uiState.value = UiState.Error("Не вдалося видалити: ${errorText(it)}")
-            }
+            repository.delete(id).onFailure { report(it) }
         }
     }
 
@@ -206,13 +219,22 @@ class ReadingsViewModel(private val repository: ReadingsRepository) : ViewModel(
         _uiState.value = UiState.Idle
     }
 
-    private fun errorText(error: Throwable): String = error.message ?: error::class.java.simpleName
+    /**
+     * Показує помилку у Snackbar і повертає її текст. 401 пропускається: її вже
+     * обробила сесія (повернення на вхід із поясненням), другого повідомлення не треба.
+     */
+    private fun report(error: Throwable, retry: (() -> Unit)? = null): String {
+        val appError = ErrorHandler.map(error)
+        if (appError !is AppError.Unauthorized) messenger.error(appError.message, retry)
+        return appError.message
+    }
 }
 
 class ReadingsViewModelFactory(
-    private val repository: ReadingsRepository
+    private val repository: ReadingsRepository,
+    private val messenger: AppMessenger
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
-        ReadingsViewModel(repository) as T
+        ReadingsViewModel(repository, messenger) as T
 }

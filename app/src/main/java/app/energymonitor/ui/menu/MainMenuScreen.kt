@@ -27,12 +27,14 @@ import app.energymonitor.ui.nav.Routes
  *
  * @param onNavigate callback, якому передається маршрут з Routes
  * @param canAddReadings чи показувати пункт додавання показників (залежить від ролі)
+ * @param canViewErrorLog чи показувати пункт журналу мережевих помилок (лише адміністратор)
  */
 @Composable
 fun MainMenuScreen(
     onNavigate: (route: String) -> Unit,
     modifier: Modifier = Modifier,
-    canAddReadings: Boolean = true
+    canAddReadings: Boolean = true,
+    canViewErrorLog: Boolean = false
 ) {
     // remember без ключів: показання генерується один раз за відкриття екрана,
     // а не при кожній рекомпозиції
@@ -70,6 +72,9 @@ fun MainMenuScreen(
                 }
                 MenuButton("Історія показників", onClick = { onNavigate(Routes.READINGS_LIST) })
                 MenuButton("Точки обліку (REST API)", onClick = { onNavigate(Routes.METERS) })
+                if (canViewErrorLog) {
+                    MenuButton("Журнал помилок мережі", onClick = { onNavigate(Routes.ERROR_LOG) })
+                }
                 MenuButton("Профіль", onClick = { onNavigate(Routes.profile("menu")) })
             }
         }

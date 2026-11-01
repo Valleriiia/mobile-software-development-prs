@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import app.energymonitor.data.MetersRepository
 import app.energymonitor.data.MetersSnapshot
 import app.energymonitor.data.ReadingsRepository
+import app.energymonitor.data.error.AppError
+import app.energymonitor.data.error.ErrorHandler
 import app.energymonitor.domain.FleetSummary
 import app.energymonitor.domain.LoadLevel
 import app.energymonitor.domain.MeterAnalytics
@@ -40,7 +42,8 @@ data class MetersUiState(
  */
 class MetersViewModel(
     private val metersRepository: MetersRepository,
-    private val readingsRepository: ReadingsRepository
+    private val readingsRepository: ReadingsRepository,
+    private val messenger: AppMessenger
 ) : ViewModel() {
 
     private val snapshot = MutableStateFlow<MetersSnapshot?>(null)
@@ -99,21 +102,29 @@ class MetersViewModel(
                 onSuccess = { snap ->
                     snapshot.value = snap
                     _message.value = if (snap.isStale) "Сервер недоступний, показано збережені дані" else null
+                    snap.staleReason?.let { report(it) }
                 },
                 onFailure = { error ->
-                    _message.value = "Не вдалося завантажити точки обліку: ${error.message ?: error::class.java.simpleName}"
+                    _message.value = "Не вдалося завантажити точки обліку"
+                    report(error)
                 }
             )
             _isLoading.value = false
         }
     }
+
+    private fun report(error: Throwable) {
+        val appError = ErrorHandler.map(error)
+        if (appError !is AppError.Unauthorized) messenger.error(appError.message) { load(force = true) }
+    }
 }
 
 class MetersViewModelFactory(
     private val metersRepository: MetersRepository,
-    private val readingsRepository: ReadingsRepository
+    private val readingsRepository: ReadingsRepository,
+    private val messenger: AppMessenger
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
-        MetersViewModel(metersRepository, readingsRepository) as T
+        MetersViewModel(metersRepository, readingsRepository, messenger) as T
 }
