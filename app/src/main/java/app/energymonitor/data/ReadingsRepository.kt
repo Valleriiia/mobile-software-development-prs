@@ -8,6 +8,7 @@ import app.energymonitor.domain.EnergyCalculator
 import app.energymonitor.domain.ReadingRecord
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 /** Результат синхронізації: дані взято з актуального кешу чи завантажено з сервера. */
 enum class RefreshOutcome { CACHE_FRESH, UPDATED }
@@ -83,8 +84,11 @@ class ReadingsRepository(
      * показників менше трьох, для прогнозу використовується типовий добовий
      * профіль об'єкта.
      */
-    suspend fun forecastKw(): Double {
-        val history = currentRecords()
+    suspend fun forecastKw(): Double = forecastFrom(currentRecords())
+
+    fun observeForecastKw(): Flow<Double> = local.observeAll().map { forecastFrom(it) }
+
+    private fun forecastFrom(history: List<ReadingRecord>): Double {
         if (history.size >= HISTORY_FOR_FORECAST) {
             val recent = history.sortedByDescending { it.timestampMillis }
                 .take(HISTORY_FOR_FORECAST)

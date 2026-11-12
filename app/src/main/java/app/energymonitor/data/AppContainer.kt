@@ -10,6 +10,7 @@ import app.energymonitor.data.auth.SharedPreferencesTokenStorage
 import app.energymonitor.data.error.CompositeErrorLogger
 import app.energymonitor.data.error.ErrorLogger
 import app.energymonitor.data.error.FileErrorLogger
+import app.energymonitor.data.live.SimulatedMeterSensors
 import app.energymonitor.data.error.LogcatErrorLogger
 import app.energymonitor.data.network.AndroidNetworkMonitor
 import app.energymonitor.data.network.ApiExecutor
@@ -43,6 +44,8 @@ class AppContainer private constructor(context: Context) {
 
     val backend = MockBackend()
     val mockAuth = MockAuth()
+
+    val sensors = SimulatedMeterSensors()
 
     val sessionManager = SessionManager(SharedPreferencesTokenStorage(context))
 

@@ -22,6 +22,9 @@ object Routes {
     // Точки обліку з REST API: картки навантаження й вартості
     const val METERS = "meters"
 
+    // Живий моніторинг: об'єднані потоки датчиків (Flow + Coroutines)
+    const val LIVE = "live"
+
     // Журнал мережевих помилок (лише для адміністратора)
     const val ERROR_LOG = "error_log"
 

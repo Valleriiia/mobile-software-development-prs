@@ -67,6 +67,7 @@ fun MainMenuScreen(
                 MenuButton("Моніторинг", onClick = { onNavigate(Routes.MONITOR) })
                 MenuButton("Розрахунок", onClick = { onNavigate(Routes.CALCULATOR) })
                 MenuButton("Панель", onClick = { onNavigate(Routes.DASHBOARD) })
+                MenuButton("Моніторинг наживо (Flow)", onClick = { onNavigate(Routes.LIVE) })
                 if (canAddReadings) {
                     MenuButton("Додати показник", onClick = { onNavigate(Routes.ADD_READING) })
                 }

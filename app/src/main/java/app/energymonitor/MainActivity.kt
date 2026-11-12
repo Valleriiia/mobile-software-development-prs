@@ -31,6 +31,7 @@ import app.energymonitor.ui.calculator.CalculatorScreen
 import app.energymonitor.ui.common.AccessDeniedScreen
 import app.energymonitor.ui.dashboard.DashboardScreen
 import app.energymonitor.ui.errorlog.ErrorLogScreen
+import app.energymonitor.ui.live.LiveMonitorScreen
 import app.energymonitor.ui.menu.MainMenuScreen
 import app.energymonitor.ui.meters.MetersScreen
 import app.energymonitor.ui.monitor.MonitorScreen
@@ -41,6 +42,8 @@ import app.energymonitor.ui.reading.ReadingsListScreen
 import app.energymonitor.ui.theme.EnergyMonitorTheme
 import app.energymonitor.viewmodel.AuthViewModel
 import app.energymonitor.viewmodel.AuthViewModelFactory
+import app.energymonitor.viewmodel.LiveMonitorViewModel
+import app.energymonitor.viewmodel.LiveMonitorViewModelFactory
 import app.energymonitor.viewmodel.MetersViewModel
 import app.energymonitor.viewmodel.MetersViewModelFactory
 import app.energymonitor.viewmodel.ReadingsViewModel
@@ -163,6 +166,22 @@ private fun EnergyMonitorNavGraph(container: AppContainer, session: Session) {
         composable(Routes.MONITOR) { MonitorScreen(onBack = { navController.popBackStack() }) }
         composable(Routes.CALCULATOR) { CalculatorScreen(onBack = { navController.popBackStack() }) }
         composable(Routes.DASHBOARD) { DashboardScreen(onBack = { navController.popBackStack() }) }
+        composable(Routes.LIVE) {
+            // ViewModel створюється всередині destination, тож живе лише поки екран у стеку:
+            // після виходу її scope скасовується, і датчики зупиняються.
+            val liveViewModel: LiveMonitorViewModel = viewModel(
+                factory = LiveMonitorViewModelFactory(
+                    container.sensors,
+                    container.readingsRepository,
+                    container.messenger
+                )
+            )
+            LiveMonitorScreen(
+                viewModel = liveViewModel,
+                canSimulateFaults = Permissions.canUseDevTools(session.role),
+                onBack = { navController.popBackStack() }
+            )
+        }
         composable(Routes.ADD_READING) {
             if (canEdit) {
                 AddReadingScreen(viewModel = readingsViewModel, onBack = { navController.popBackStack() })
