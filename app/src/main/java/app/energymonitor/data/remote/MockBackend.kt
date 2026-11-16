@@ -35,12 +35,28 @@ class MockBackend(now: Long = System.currentTimeMillis()) {
     private var flakyStreak = 0
     private val updatedAt = now
 
+    // Координати умовні (поблизу кампусу), різниця між точками одного корпусу кілька метрів.
     val meters: List<MeterDto> = listOf(
-        MeterDto("m1", "Щит №1", LocationDto("Корпус 18", 1), 6.0),
-        MeterDto("m2", "Щит №2", LocationDto("Корпус 18", 2), 4.0),
-        MeterDto("m3", "Серверна", LocationDto("Корпус 18", 0), 6.0),
-        MeterDto("m4", "Освітлення", LocationDto("Корпус 18", 1), 2.0),
-        MeterDto("m5", "Вентиляція", LocationDto("Корпус 20", 3), 6.0)
+        MeterDto(
+            "m1", "Щит №1", LocationDto("Корпус 18", 1, 50.45010, 30.46140), 6.0,
+            "switchboard", "Головний розподільчий щит першого поверху"
+        ),
+        MeterDto(
+            "m2", "Щит №2", LocationDto("Корпус 18", 2, 50.45016, 30.46150), 4.0,
+            "switchboard", "Щит живлення лабораторій другого поверху"
+        ),
+        MeterDto(
+            "m3", "Серверна", LocationDto("Корпус 18", 0, 50.45004, 30.46128), 6.0,
+            "server_room", "Серверна кімната з резервним живленням (ДБЖ)"
+        ),
+        MeterDto(
+            "m4", "Освітлення", LocationDto("Корпус 18", 1, 50.45022, 30.46132), 2.0,
+            "lighting", "Лінія освітлення коридорів та аудиторій"
+        ),
+        MeterDto(
+            "m5", "Вентиляція", LocationDto("Корпус 20", 3, 50.44940, 30.46420), 6.0,
+            "hvac", "Припливно-витяжна вентиляція верхнього поверху"
+        )
     )
 
     val tariffs: List<TariffDto> = listOf(

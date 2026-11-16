@@ -1,8 +1,15 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
 }
+
+val mapsApiKey: String = Properties().also { props ->
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use { props.load(it) }
+}.getProperty("MAPS_API_KEY", "")
 
 android {
     namespace = "app.energymonitor"
@@ -18,6 +25,8 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
+
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -64,4 +73,6 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:3.0.0")
     implementation("com.squareup.retrofit2:converter-gson:3.0.0")
     implementation("com.squareup.okhttp3:okhttp:5.5.1")
+    implementation("com.google.maps.android:maps-compose:6.4.1")
+    implementation("com.google.android.gms:play-services-maps:19.0.0")
 }

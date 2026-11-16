@@ -1,5 +1,6 @@
 package app.energymonitor.ui.meters
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,12 +27,18 @@ import app.energymonitor.ui.theme.LoadOverload
 import app.energymonitor.ui.theme.LoadWarning
 
 /**
- * Картка точки обліку: довідкові дані з REST API (назва, розташування,
+ * Картка точки обліку: довідкові дані з REST API (назва, тип, опис, розташування,
  * договірна потужність) разом із розрахунками за останнім показником.
  * Картка лише відображає готові MeterCardData і нічого не обчислює сама.
+ * Натискання вибирає точку: картка отримує рамку, а мапа наближається до маркера.
  */
 @Composable
-fun MeterCard(data: MeterCardData, modifier: Modifier = Modifier) {
+fun MeterCard(
+    data: MeterCardData,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val levelColor = when (data.level) {
         LoadLevel.NORMAL -> LoadNormal
         LoadLevel.WARNING -> LoadWarning
@@ -39,7 +46,11 @@ fun MeterCard(data: MeterCardData, modifier: Modifier = Modifier) {
         null -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    Card(modifier = modifier.fillMaxWidth()) {
+    Card(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+    ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -48,7 +59,7 @@ fun MeterCard(data: MeterCardData, modifier: Modifier = Modifier) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(data.meter.name, style = MaterialTheme.typography.titleMedium)
                     Text(
-                        text = "${data.meter.building}, поверх ${data.meter.floor}",
+                        text = "${data.meter.type.title} · ${data.meter.building}, поверх ${data.meter.floor}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -58,6 +69,11 @@ fun MeterCard(data: MeterCardData, modifier: Modifier = Modifier) {
                     style = MaterialTheme.typography.labelLarge,
                     color = levelColor
                 )
+            }
+
+            if (data.meter.description.isNotBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(data.meter.description, style = MaterialTheme.typography.bodySmall)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -82,6 +98,15 @@ fun MeterCard(data: MeterCardData, modifier: Modifier = Modifier) {
                     text = "За добу: ${(data.dailyEnergyKwh ?: 0.0).fmt(1)} кВт·год, ≈ ${(data.dailyCostUah ?: 0.0).fmt(0)} грн",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            if (data.meter.position == null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Координат немає: на мапі не показано",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error
                 )
             }
         }

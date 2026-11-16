@@ -1,6 +1,8 @@
 package app.energymonitor.data.remote.dto
 
+import app.energymonitor.domain.GeoPoint
 import app.energymonitor.domain.Meter
+import app.energymonitor.domain.MeterType
 import app.energymonitor.domain.ReadingRecord
 import app.energymonitor.domain.Tariff
 import com.google.gson.annotations.SerializedName
@@ -23,14 +25,18 @@ data class ReadingDto(
 
 data class LocationDto(
     @SerializedName("building") val building: String?,
-    @SerializedName("floor") val floor: Int?
+    @SerializedName("floor") val floor: Int?,
+    @SerializedName("lat") val latitude: Double? = null,
+    @SerializedName("lng") val longitude: Double? = null
 )
 
 data class MeterDto(
     @SerializedName("id") val id: String?,
     @SerializedName("name") val name: String?,
     @SerializedName("location") val location: LocationDto?,
-    @SerializedName("contract_power_kw") val contractPowerKw: Double?
+    @SerializedName("contract_power_kw") val contractPowerKw: Double?,
+    @SerializedName("type") val type: String? = null,
+    @SerializedName("description") val description: String? = null
 )
 
 /** Обгортка зі вкладеним масивом: сервер повертає не голий список, а об'єкт. */
@@ -71,8 +77,18 @@ fun MeterDto.toDomainOrNull(): Meter? {
         name = name.trim(),
         building = location?.building ?: "—",
         floor = location?.floor ?: 0,
-        contractPowerKw = power
+        contractPowerKw = power,
+        type = MeterType.fromApi(type),
+        description = description?.trim().orEmpty(),
+        position = location?.toGeoPointOrNull()
     )
+}
+
+/** Координати приймаються лише коли є обидві й вони в допустимих межах. */
+private fun LocationDto.toGeoPointOrNull(): GeoPoint? {
+    val lat = latitude ?: return null
+    val lng = longitude ?: return null
+    return GeoPoint(lat, lng).takeIf { it.isValid }
 }
 
 fun TariffDto.toDomainOrNull(): Tariff? {

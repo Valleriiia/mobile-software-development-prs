@@ -5,6 +5,7 @@ import app.energymonitor.data.remote.MockAuth
 import app.energymonitor.data.remote.MockBackend
 import app.energymonitor.data.remote.MockServerInterceptor
 import app.energymonitor.data.remote.dto.MetersResponse
+import app.energymonitor.domain.MeterType
 import app.energymonitor.data.remote.dto.ReadingDto
 import app.energymonitor.data.remote.dto.toDomainOrNull
 import com.google.gson.Gson
@@ -98,6 +99,8 @@ class MockServerTest {
         assertEquals(5, meters.size)
         assertEquals("Корпус 20", meters.first { it.name == "Вентиляція" }.building)
         assertEquals(3, meters.first { it.name == "Вентиляція" }.floor)
+        assertTrue(meters.all { it.position != null && it.description.isNotBlank() })
+        assertEquals(MeterType.HVAC, meters.first { it.name == "Вентиляція" }.type)
     }
 
     @Test

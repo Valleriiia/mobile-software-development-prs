@@ -1,11 +1,29 @@
 package app.energymonitor.domain
 
+enum class MeterType(val apiValue: String, val title: String) {
+    SWITCHBOARD("switchboard", "Розподільчий щит"),
+    SERVER_ROOM("server_room", "Серверна"),
+    LIGHTING("lighting", "Освітлення"),
+    HVAC("hvac", "Вентиляція та клімат"),
+    OTHER("other", "Інше");
+
+    companion object {
+        /** Невідомий або відсутній тип від сервера не ламає розбір, а стає OTHER. */
+        fun fromApi(value: String?): MeterType =
+            values().firstOrNull { it.apiValue.equals(value?.trim(), ignoreCase = true) } ?: OTHER
+    }
+}
+
 data class Meter(
     val id: String,
     val name: String,
     val building: String,
     val floor: Int,
-    val contractPowerKw: Double
+    val contractPowerKw: Double,
+    val type: MeterType = MeterType.OTHER,
+    val description: String = "",
+    /** Координати точки обліку; null, якщо сервер їх не надіслав (на мапі її не буде). */
+    val position: GeoPoint? = null
 )
 
 data class Tariff(

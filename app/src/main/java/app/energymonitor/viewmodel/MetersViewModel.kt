@@ -32,7 +32,8 @@ data class MetersUiState(
     val summary: FleetSummary = FleetSummary.EMPTY,
     val isLoading: Boolean = false,
     val message: String? = null,
-    val isStale: Boolean = false
+    val isStale: Boolean = false,
+    val selectedId: String? = null
 )
 
 /**
@@ -54,8 +55,16 @@ class MetersViewModel(
     private val _levelFilter = MutableStateFlow<LoadLevel?>(null)
     val levelFilter: StateFlow<LoadLevel?> = _levelFilter.asStateFlow()
 
+    /** Єдине джерело правди про вибір: і список, і мапа лише читають це значення. */
+    private val _selectedId = MutableStateFlow<String?>(null)
+
     private val _isLoading = MutableStateFlow(false)
     private val _message = MutableStateFlow<String?>(null)
+
+    /** Службові прапорці екрана зібрано в один потік, щоб не перевищити ліміт combine. */
+    private val status = combine(_isLoading, _message, _selectedId) { loading, message, selected ->
+        Triple(loading, message, selected)
+    }
 
     private val allCards: Flow<List<MeterCardData>> =
         combine(snapshot, readingsRepository.observeAll()) { snap, readings ->
@@ -64,7 +73,7 @@ class MetersViewModel(
         }
 
     val state: StateFlow<MetersUiState> =
-        combine(allCards, _sort, _levelFilter, _isLoading, _message) { cards, sort, level, loading, message ->
+        combine(allCards, _sort, _levelFilter, status) { cards, sort, level, (loading, message, selectedId) ->
             val filtered = if (level == null) cards else cards.filter { it.level == level }
             val sorted = when (sort) {
                 MeterSort.LOAD_DESC -> filtered.sortedByDescending { it.loadPercent ?: -1.0 }
@@ -77,7 +86,8 @@ class MetersViewModel(
                 summary = MeterAnalytics.summarize(cards),
                 isLoading = loading,
                 message = message,
-                isStale = snapshot.value?.isStale == true
+                isStale = snapshot.value?.isStale == true,
+                selectedId = selectedId
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MetersUiState())
 
@@ -91,6 +101,10 @@ class MetersViewModel(
 
     fun setLevelFilter(level: LoadLevel?) {
         _levelFilter.value = level
+    }
+
+    fun select(id: String?) {
+        _selectedId.value = id
     }
 
     fun load(force: Boolean = true) {

@@ -72,7 +72,7 @@ fun MainMenuScreen(
                     MenuButton("Додати показник", onClick = { onNavigate(Routes.ADD_READING) })
                 }
                 MenuButton("Історія показників", onClick = { onNavigate(Routes.READINGS_LIST) })
-                MenuButton("Точки обліку (REST API)", onClick = { onNavigate(Routes.METERS) })
+                MenuButton("Точки обліку: список і мапа", onClick = { onNavigate(Routes.METERS) })
                 if (canViewErrorLog) {
                     MenuButton("Журнал помилок мережі", onClick = { onNavigate(Routes.ERROR_LOG) })
                 }
